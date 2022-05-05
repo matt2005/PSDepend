@@ -9,7 +9,7 @@
     Chocolatey = @{
         Script = 'Chocolatey.ps1'
         Description = 'Install a Chocolatey package from a Chocolatey feed'
-        Supports = 'windows'
+        Supports = 'core', 'windows'
     }
     
     Command = @{
