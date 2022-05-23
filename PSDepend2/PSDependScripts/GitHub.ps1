@@ -476,93 +476,116 @@ if(($PSDependAction -contains 'Install') -and $ShouldInstall)
     }
     else
     {
-        # If not on Windows "Expand-Archive" should be available as PS version 6 is considered minimum.
-        Expand-Archive $OutFile -DestinationPath $OutPath
+        # Handle long file paths: https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd
+        # Also prevents a flood of error output to console
+        try {
+            # If not on Windows "Expand-Archive" should be available as PS version 6 is considered minimum.
+            Expand-Archive $OutFile -DestinationPath $OutPath -ErrorAction SilentlyContinue -ErrorVariable "ExpandError"
+        }
+        catch {
+            # Long file paths should only affect Windows
+            if($script:IsWindows -and ($ExpandError[0] -like "*ExtractToFile*")){
+                Write-Error -Message "Extraction failed because the file path was too long."
+
+                Write-Output "This can be fixed by choosing one of the following:"
+                Write-Output "1) Set HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled to '1' and restart the system."
+                Write-Output "2) Use PowerShell Core version 7 (and above)."
+
+                Write-Verbose -Message $ExpandError[0]
+            }else{
+                # Always the possibility something else went wrong
+                Write-Error -Message $ExpandError[0]
+            }
+        }
     }
 
     # Remove the zip file
     Remove-Item $OutFile -Force -Confirm:$false
 
-    $OutPath = (Get-ChildItem -Path $OutPath)[0].FullName
-    $OutPath = (Rename-Item -Path $OutPath -NewName $DependencyName -PassThru).FullName
-
-    if($ExtractPath)
-    {
-        # Filter only the contents wanted
-        [string[]]$ToCopy = foreach($RelativePath in $ExtractPath)
+    # Only proceed if zip file sucessfully expanded
+    $ExpandedFolder = Get-ChildItem -Path $OutPath -Directory -ErrorAction SilentlyContinue
+    if($ExpandedFolder){
+        $DependencyPath = $ExpandedFolder[0].FullName
+        $DependencyPath = (Rename-Item -Path $DependencyPath -NewName $DependencyName -PassThru).FullName
+    
+        if($ExtractPath)
         {
-            $AbsolutePath = Join-Path $OutPath $RelativePath
-            if(-not (Test-Path $AbsolutePath))
+            # Filter only the contents wanted
+            [string[]]$ToCopy = foreach($RelativePath in $ExtractPath)
             {
-                Write-Warning "Expected ExtractPath [$RelativePath], did not find at [$AbsolutePath]"
-            }
-            else
-            {
-                $AbsolutePath
+                $AbsolutePath = Join-Path $DependencyPath $RelativePath
+                if(-not (Test-Path $AbsolutePath))
+                {
+                    Write-Warning "Expected ExtractPath [$RelativePath], did not find at [$AbsolutePath]"
+                }
+                else
+                {
+                    $AbsolutePath
+                }
             }
         }
-    }
-    elseif($ExtractProject)
-    {
-        # Filter only the project contents
-        $ProjectDetails = Get-ProjectDetail -Path $OutPath
-        [string[]]$ToCopy = $ProjectDetails.Path
-    }
-    else
-    {
-        # Use the standard download path
-        [string[]]$ToCopy = $OutPath
-    }
-
-    Write-Verbose "Contents that will be copied: $ToCopy"
-
-    # Copy the contents to their target
-    if(-not (Test-Path $TargetPath))
-    {
-        New-Item $TargetPath -ItemType "directory" -Force
-    }
-
-    $Destination = $null
-
-    if($TargetType -eq 'Exact')
-    {
-        $Destination = $TargetPath
-    }
-    elseif($DependencyVersion -match "^\d+(?:\.\d+)+$" -and $PSVersionTable.PSVersion -ge '5.0'  )
-    {
-        # For versioned GitHub tags
-        $Destination = Join-Path $TargetPath $DependencyVersion
-    }
-    elseif(($DependencyVersion -eq "latest") -and ($RemoteAvailable) -and $PSVersionTable.PSVersion -ge '5.0' )
-    {
-        # For latest GitHub tags
-        $Destination = Join-Path $TargetPath $GitHubVersion
-    }
-    elseif($PSVersionTable.PSVersion -ge '5.0' -and $TargetType -eq 'Parallel')
-    {
-        # For GitHub branches
-        $Destination = Join-Path $TargetPath $DependencyVersion
-        $Destination = Join-Path $Destination $DependencyName
-    }
-    else
-    {
-        $Destination = $TargetPath
-    }
-
-    if($Force -and (Test-Path -Path $Destination))
-    {
-        Remove-Item -Path $Destination -Force -Recurse
-    }
-
-    Write-Verbose "Copying [$($ToCopy.Count)] items to destination [$Destination] with`nTarget [$TargetPath]`nName [$DependencyName]`nVersion [$DependencyVersion]`nGitHubVersion [$GitHubVersion]"
-
-    foreach($Item in $ToCopy)
-    {
-        Copy-Item -Path $Item -Destination $Destination -Force -Recurse
+        elseif($ExtractProject)
+        {
+            # Filter only the project contents
+            $ProjectDetails = Get-ProjectDetail -Path $DependencyPath
+            [string[]]$ToCopy = $ProjectDetails.Path
+        }
+        else
+        {
+            # Use the standard download path
+            [string[]]$ToCopy = $DependencyPath
+        }
+    
+        Write-Verbose "Contents that will be copied: $ToCopy"
+    
+        # Copy the contents to their target
+        if(-not (Test-Path $TargetPath))
+        {
+            New-Item $TargetPath -ItemType "directory" -Force
+        }
+    
+        $Destination = $null
+    
+        if($TargetType -eq 'Exact')
+        {
+            $Destination = $TargetPath
+        }
+        elseif($DependencyVersion -match "^\d+(?:\.\d+)+$" -and $PSVersionTable.PSVersion -ge '5.0'  )
+        {
+            # For versioned GitHub tags
+            $Destination = Join-Path $TargetPath $DependencyVersion
+        }
+        elseif(($DependencyVersion -eq "latest") -and ($RemoteAvailable) -and $PSVersionTable.PSVersion -ge '5.0' )
+        {
+            # For latest GitHub tags
+            $Destination = Join-Path $TargetPath $GitHubVersion
+        }
+        elseif($PSVersionTable.PSVersion -ge '5.0' -and $TargetType -eq 'Parallel')
+        {
+            # For GitHub branches
+            $Destination = Join-Path $TargetPath $DependencyVersion
+            $Destination = Join-Path $Destination $DependencyName
+        }
+        else
+        {
+            $Destination = $TargetPath
+        }
+    
+        if($Force -and (Test-Path -Path $Destination))
+        {
+            Remove-Item -Path $Destination -Force -Recurse
+        }
+    
+        Write-Verbose "Copying [$($ToCopy.Count)] items to destination [$Destination] with`nTarget [$TargetPath]`nName [$DependencyName]`nVersion [$DependencyVersion]`nGitHubVersion [$GitHubVersion]"
+    
+        foreach($Item in $ToCopy)
+        {
+            Copy-Item -Path $Item -Destination $Destination -Force -Recurse
+        }
     }
 
     # Delete the temporary folder
-    Remove-Item (Get-Item $OutPath).parent.FullName -Force -Recurse
+    Remove-Item -Path $OutPath -Force -Recurse
     $ModuleExisting = $true
 }
 
