@@ -182,6 +182,9 @@ $DependencyVersion = $Dependency.Version
 $DependencyTarget = $Dependency.Target
 $DependencyName = if ($Dependency.Name) {$Dependency.Name} Else {$DependencyID.Split("/")[1]}
 
+# Initialize GitHub web request headers
+$WebRequestHeaders = @{}
+
 # Translate "" to "latest"
 if($DependencyVersion -eq "")
 {
@@ -210,6 +213,14 @@ if($script:IsWindows)
 else
 {
     $AllUsersPath = [System.Management.Automation.Platform]::SelectProductNameForDirectory('SHARED_MODULES')
+}
+
+# Add Basic auth string header
+if($Dependency.Credential){
+    $WebRequestHeaders.Add(
+        "Authorization",
+        "Basic " + ([System.Convert]::ToBase64String([System.Text.ASCIIEncoding]::ASCII.GetBytes("$($Dependency.Credential.UserName):$($Dependency.Credential.GetNetworkCredential().Password)")))
+    )
 }
 
 # Check if the MyDocuments folder path is accessible
@@ -345,7 +356,7 @@ if($ShouldInstall)
         {
             $Page++
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-            $GitHubTags = Invoke-RestMethod -Uri "https://api.github.com/repos/$DependencyID/tags?per_page=100&page=$Page"
+            $GitHubTags = Invoke-RestMethod -Uri "https://api.github.com/repos/$DependencyID/tags?per_page=100&page=$Page" -Headers $WebRequestHeaders
 
             if($GitHubTags)
             {
@@ -447,7 +458,7 @@ if(($PSDependAction -contains 'Install') -and $ShouldInstall)
     $OutFile = Join-Path $OutPath "$DependencyVersion.zip"
     $PreviousProgressPreference=$ProgressPreference
     $ProgressPreference='SilentlyContinue'
-    Invoke-RestMethod -Uri $URL -OutFile $OutFile
+    Invoke-RestMethod -Uri $URL -OutFile $OutFile -Headers $WebRequestHeaders
     $ProgressPreference=$PreviousProgressPreference
 
     if(-not (Test-Path $OutFile))
