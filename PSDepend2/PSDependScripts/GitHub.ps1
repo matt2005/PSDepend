@@ -455,7 +455,7 @@ if(($PSDependAction -contains 'Install') -and $ShouldInstall)
     # Create a temporary directory and download the repository to it
     $OutPath = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().guid)
     New-Item -ItemType Directory -Path $OutPath -Force | Out-Null
-    $OutFile = Join-Path $OutPath "$DependencyVersion.zip"
+    $OutFile = Join-Path $OutPath "$DependencyName.zip"
     $PreviousProgressPreference=$ProgressPreference
     $ProgressPreference='SilentlyContinue'
     Invoke-RestMethod -Uri $URL -OutFile $OutFile -Headers $WebRequestHeaders
