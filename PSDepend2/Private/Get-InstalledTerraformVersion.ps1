@@ -23,7 +23,7 @@ function Get-InstalledTerraformVersion {
                     Version      = "{0}{1}" -f $VersionCore, $PreReleaseTag
                     VersionCore  = $VersionCore
                     PreRelease   = $PreRelease
-                    IsPreRelease = ($null -ne $PreRelease ? $true : $false)
+                    IsPreRelease = if ($null -ne $PreRelease) { $true } else { $false }
                 })
         }
         else {
