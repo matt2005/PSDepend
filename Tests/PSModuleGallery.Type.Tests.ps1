@@ -1252,4 +1252,130 @@ InModuleScope ('{0}' -f $ENV:BHProjectName) {
             }
         }
     }
+
+    Describe "Terraform Type PS$PSVersion" {
+        Context 'Installs dependency' {
+            Mock Get-WebFile {
+                [pscustomobject]@{
+                    PSB = $PSBoundParameters
+                    Arg = $Args
+                }
+            }
+            Mock Get-InstalledTerraformVersion {}
+
+            $Dependencies = @(Get-Dependency @Verbose -Path "$TestDepends\terraform.depend.psd1")
+
+            It 'Parses the Terraform dependency type' {
+                $Dependencies.count | Should be 1
+                $Dependencies[0].DependencyType | Should be 'Terraform'
+            }
+
+            $Results = Invoke-PSDepend @Verbose -Path "$TestDepends\terraform.depend.psd1" -Force
+
+            It 'Invokes the Terraform dependency type' {
+                Assert-MockCalled Get-WebFile -Times 0 -Exactly
+                Assert-MockCalled Get-InstalledTerraformVersion -Times 1 -Exactly
+            }
+        }
+
+        Context 'Installs dependency' {
+            Mock Get-WebFile {
+                [pscustomobject]@{
+                    PSB = $PSBoundParameters
+                    Arg = $Args
+                }
+            }
+            Mock Get-InstalledTerraformVersion {}
+
+            $Dependencies = @(Get-Dependency @Verbose -Path "$TestDepends\terraform.depend.psd1")
+
+            It 'Parses the Terraform dependency type' {
+                $Dependencies.count | Should be 1
+                $Dependencies[0].DependencyType | Should be 'Terraform'
+            }
+
+            $Results = Invoke-PSDepend @Verbose -Path "$TestDepends\terraform.depend.psd1" -Force
+
+            It 'Invokes the Terraform dependency type' {
+                Assert-MockCalled Get-WebFile -Times 0 -Exactly
+                Assert-MockCalled Get-InstalledTerraformVersion -Times 1 -Exactly
+            }
+        }
+
+        Context "Bad version input" {
+            Mock Get-WebFile {}
+            Mock Get-InstalledTerraformVersion {}
+
+            It "Throws because required version doesn't exist" {
+                $Results = { Invoke-PSDepend @Verbose -Path "$TestDepends\terraform_no_version.depend.psd1" -Force }
+                Assert-MockCalled Get-InstalledTerraformVersion -Times 0 -Exactly
+                $Results | Should Throw
+            }
+
+            It "Throws because requested version couldn't be found" {
+                $Results = { Invoke-PSDepend @Verbose -Path "$TestDepends\terraform_bad_version.depend.psd1" -Force }
+                Assert-MockCalled Get-InstalledTerraformVersion -Times 1 -Exactly
+                $Results | Should Throw
+            }
+        }
+
+        Context 'Tests dependency - not installed' {
+            Mock Get-WebFile {}
+            Mock Get-InstalledTerraformVersion {
+                return [PSCustomObject]@{
+                    IsInstalled  = $false
+                    IsPreRelease = $false
+                }
+            }
+            It 'Returns $false if it is not installed' {
+                $Results = @( Get-Dependency @Verbose -Path "$TestDepends\terraform.depend.psd1" | Test-Dependency @Verbose -Quiet)
+                $Results.count | Should be 1
+                $Results[0] | Should be $False
+                Assert-MockCalled -CommandName Get-WebFile -Times 0 -Exactly
+                Assert-MockCalled Get-InstalledTerraformVersion -Times 1 -Exactly
+            }
+        }
+
+        Context "Tests dependency - installed with wrong version" {
+            Mock Get-WebFile {}
+            Mock Get-InstalledTerraformVersion {
+                return [PSCustomObject]@{
+                    IsInstalled  = $true
+                    Version      = "1.0.0"
+                    VersionCore  = "1.0.0"
+                    PreRelease   = $null
+                    IsPreRelease = $null
+                }
+            }
+
+            It 'Returns $false if it is installed and is the wrong version' {
+                $Results = @( Get-Dependency @Verbose -Path "$TestDepends\terraform.depend.psd1" | Test-Dependency @Verbose -Quiet)
+                $Results.count | Should be 1
+                $Results[0] | Should be $false
+                Assert-MockCalled -CommandName Get-WebFile -Times 0 -Exactly
+                Assert-MockCalled Get-InstalledTerraformVersion -Times 1 -Exactly
+            }
+        }
+
+        Context "Tests dependency - installed with correct version" {
+            Mock Get-WebFile {}
+            Mock Get-InstalledTerraformVersion {
+                return [PSCustomObject]@{
+                    IsInstalled  = $true
+                    Version      = "1.1.1"
+                    VersionCore  = "1.1.1"
+                    PreRelease   = $null
+                    IsPreRelease = $null
+                }
+            }
+
+            It 'Returns $true if it is installed' {
+                $Results = @( Get-Dependency @Verbose -Path "$TestDepends\terraform.depend.psd1" | Test-Dependency @Verbose -Quiet)
+                $Results.count | Should be 1
+                $Results[0] | Should be $true
+                Assert-MockCalled -CommandName Get-WebFile -Times 0 -Exactly
+                Assert-MockCalled Get-InstalledTerraformVersion -Times 1 -Exactly
+            }
+        }
+    }
 }
