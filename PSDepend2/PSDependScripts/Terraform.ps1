@@ -135,8 +135,8 @@ if ($PSDependAction -eq "Install" -and $InstallNeeded) {
         Write-Verbose "Version of zip found at $DownloadPath"
     }
 
-    $Out = Expand-Archive -Path $DownloadPath -DestinationPath $Path -Force -PassThru
-    Write-Verbose "Terraform installed to $Out"
+    Expand-PSDependArchive -Path $DownloadPath -DestinationPath $Path -Force
+    Write-Verbose "Terraform installed to $Path"
 
     if ($Dependency.AddToPath) {
         Write-Verbose "Setting PATH to`n$($Path, $env:PATH -join ';' | Out-String)"
