@@ -16,7 +16,7 @@
     The architecture of the binary to install. Defaults to amd64
 
     .PARAMETER PSDependAction
-    Test or Install the module.  Defaults to Install
+        Test or Install the module.  Defaults to Install
 
         Test: Return true or false on whether the dependency is in place
         Install: Install the dependency
@@ -87,8 +87,8 @@ if (-not $Version) {
     throw "Input version does not match regex"
 }
 
-$Platform = ((Get-OSEnvironment) -eq "MacOS" ? "darwin" : (Get-OSEnvironment)).ToLower()
-$FileName = "terraform_{0}_{1}_{2}.zip" -f $Version, $Platform, $Architecture
+$Platform = if ((Get-OSEnvironment) -eq "MacOS") { "darwin" } else { Get-OSEnvironment }
+$FileName = "terraform_{0}_{1}_{2}.zip" -f $Version, $Platform.ToLower(), $Architecture
 $DownloadPath = Join-Path $env:TEMP $FileName
 if (-not $Dependency.target) {
     $Path = Get-Location
@@ -100,19 +100,19 @@ else {
 if ($tf.IsInstalled) {
     if ($tf.Version -ne $Version) {
         Write-Verbose "Installed Terraform v$($tf.Version) does not match version v$($Version) required"
-        $ToInstall = $true
+        $InstallNeeded = $true
     }
     else {
         Write-Verbose "Terraform v$($tf.Version) installed"
-        $ToInstall = $false
+        $InstallNeeded = $false
     }
 }
 else {
     Write-Verbose "Terraform not found on path"
-    $ToInstall = $true
+    $InstallNeeded = $true
 }
 
-if ($PSDependAction -eq "Install" -and $ToInstall -eq $true) {
+if ($PSDependAction -eq "Install" -and $InstallNeeded) {
     if ($Source) {
         $URL = $Source
     }
@@ -145,9 +145,9 @@ if ($PSDependAction -eq "Install" -and $ToInstall -eq $true) {
 
     return $true
 }
-elseif ($PSDependAction -eq "Install" -and $ToInstall -eq $false) {
+elseif ($PSDependAction -eq "Install" -and $InstallNeeded -eq $false) {
     return $true
 }
 elseif ($PSDependAction -eq "Test") {
-    return $ToInstall -eq $true ? $false : $true
+    return -not $InstallNeeded
 }
