@@ -1262,6 +1262,7 @@ InModuleScope ('{0}' -f $ENV:BHProjectName) {
                 }
             }
             Mock Get-InstalledTerraformVersion {}
+            Mock Expand-PSDependArchive {}
 
             $Dependencies = @(Get-Dependency @Verbose -Path "$TestDepends\terraform.depend.psd1")
 
@@ -1273,32 +1274,9 @@ InModuleScope ('{0}' -f $ENV:BHProjectName) {
             $Results = Invoke-PSDepend @Verbose -Path "$TestDepends\terraform.depend.psd1" -Force
 
             It 'Invokes the Terraform dependency type' {
-                Assert-MockCalled Get-WebFile -Times 0 -Exactly
+                Assert-MockCalled Get-WebFile -Times 1 -Exactly
                 Assert-MockCalled Get-InstalledTerraformVersion -Times 1 -Exactly
-            }
-        }
-
-        Context 'Installs dependency' {
-            Mock Get-WebFile {
-                [pscustomobject]@{
-                    PSB = $PSBoundParameters
-                    Arg = $Args
-                }
-            }
-            Mock Get-InstalledTerraformVersion {}
-
-            $Dependencies = @(Get-Dependency @Verbose -Path "$TestDepends\terraform.depend.psd1")
-
-            It 'Parses the Terraform dependency type' {
-                $Dependencies.count | Should be 1
-                $Dependencies[0].DependencyType | Should be 'Terraform'
-            }
-
-            $Results = Invoke-PSDepend @Verbose -Path "$TestDepends\terraform.depend.psd1" -Force
-
-            It 'Invokes the Terraform dependency type' {
-                Assert-MockCalled Get-WebFile -Times 0 -Exactly
-                Assert-MockCalled Get-InstalledTerraformVersion -Times 1 -Exactly
+                Assert-MockCalled Expand-PSDependArchive -Times 1 -Exactly
             }
         }
 
