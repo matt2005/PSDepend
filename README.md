@@ -2,7 +2,8 @@
 
 ## **This is a fork of PSDepend as the [master repo](https://rgithub.com/RamblingCookieMonster/PSDepend) appears to have been abandoned**
 
-I've created this so I fix some issues that are causing me pain. such as os detection not working correctly ps7 on windows
+I've created this so I fix some issues that are causing me pain. such as os detection not working correctly ps7 on windows.
+Please submit Issues/PR's if you encounter issues.
 
 PSDepend2
 ========
