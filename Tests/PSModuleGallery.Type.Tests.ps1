@@ -383,6 +383,7 @@ InModuleScope ('{0}' -f $ENV:BHProjectName) {
             Mock Get-Module {
                 [pscustomobject]@{
                     Version = '1.2.5'
+                    Path    = "C:\dummy\path"
                 }
             }
             Mock Find-Module {

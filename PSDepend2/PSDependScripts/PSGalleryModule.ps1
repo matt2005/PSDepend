@@ -249,7 +249,7 @@ if($Existing)
     {
         Write-Verbose "You have the requested version [$Version] of [$Name]"
         # Conditional import
-        Import-PSDependModule -Name $ModuleName -Action $PSDependAction -Version $ExistingVersion
+        Import-PSDependModule -Name $Existing.Path -Action $PSDependAction -Version $ExistingVersion
 
         if($PSDependAction -contains 'Test')
         {
@@ -277,7 +277,7 @@ if($Existing)
     {
         Write-Verbose "You have the latest version of [$Name], with installed version [$ExistingVersion] and PSGallery version [$GalleryVersion]"
         # Conditional import
-        Import-PSDependModule -Name $ModuleName -Action $PSDependAction -Version $ExistingVersion
+        Import-PSDependModule -Name $Existing.Path -Action $PSDependAction -Version $ExistingVersion
 
         if($PSDependAction -contains 'Test')
         {
