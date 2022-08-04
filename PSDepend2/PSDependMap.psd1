@@ -11,7 +11,7 @@
         Description = 'Install a Chocolatey package from a Chocolatey feed'
         Supports = 'core', 'windows'
     }
-    
+
     Command = @{
         Script = 'Command.ps1'
         Description = 'Invoke a command in PowerShell'
@@ -87,6 +87,12 @@
     Task = @{
         Script = 'Task.ps1'
         Description = 'Support dependencies by handling simple tasks'
+        Supports = 'core', 'windows', 'macos', 'linux'
+    }
+
+    Terraform = @{
+        Script = 'Terraform.ps1'
+        Description = 'Installs Terraform'
         Supports = 'core', 'windows', 'macos', 'linux'
     }
 }

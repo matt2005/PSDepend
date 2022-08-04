@@ -456,18 +456,8 @@ if(($PSDependAction -contains 'Install') -and $ShouldInstall)
         return
     }
 
-    # Extract the zip file
-    if (($script:IsWindows) -and ($psEdition -eq 'Desktop') -and ($null -eq $(Get-Command -Name Expand-Archive)))
-    {
-        $ZipFile = (New-Object -com shell.application).NameSpace($OutFile)
-        $ZipDestination = (New-Object -com shell.application).NameSpace($OutPath)
-        $ZipDestination.CopyHere($ZipFile.Items())
-    }
-    else
-    {
-        # If not on Windows "Expand-Archive" should be available as PS version 6 is considered minimum.
-        Expand-Archive $OutFile -DestinationPath $OutPath
-    }
+    # Use our internal implementation to cater for Windows PS 5.1 and below + pwsh 6+
+    Expand-PSDependArchive -Path $OutFile -DestinationPath $OutPath
 
     # Remove the zip file
     Remove-Item $OutFile -Force -Confirm:$false
