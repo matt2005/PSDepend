@@ -44,14 +44,17 @@ Task Test -Depends Init  {
     "`n`tSTATUS: Testing with PowerShell $PSVersion"
 
     # Gather test results. Store them in a variable and file
-    $pesterParameters = @{
-        Path         = "$ProjectRoot\Tests"
-        PassThru     = $true
-        OutputFormat = "NUnitXml" 
-        OutputFile   = "$ProjectRoot\$TestFile"
+    $pesterConfig = New-PesterConfiguration
+    $pesterConfig.Run.Path = "$ProjectRoot\Tests"
+    $pesterConfig.Run.PassThru = $true
+    $pesterConfig.TestResult.OutputFormat = "NUnitXml"
+    $pesterConfig.TestResult.OutputPath = "$ProjectRoot\$TestFile"
+
+    if (-Not $IsWindows) {
+        $pesterConfig.Run.ExcludeTag = "WindowsOnly"
     }
-    if (-Not $IsWindows) { $pesterParameters["ExcludeTag"] = "WindowsOnly" }
-    $TestResults = Invoke-Pester @pesterParameters
+
+    $TestResults = Invoke-Pester -Configuration $pesterConfig
 
     # In Appveyor?  Upload our tests! #Abstract this into a function?
     If($ENV:BHBuildSystem -eq 'AppVeyor')
