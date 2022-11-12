@@ -47,6 +47,7 @@ Task Test -Depends Init  {
     $pesterConfig = New-PesterConfiguration
     $pesterConfig.Run.Path = "$ProjectRoot\Tests"
     $pesterConfig.Run.PassThru = $true
+    $pesterConfig.TestResult.Enabled = $true
     $pesterConfig.TestResult.OutputFormat = "NUnitXml"
     $pesterConfig.TestResult.OutputPath = "$ProjectRoot\$TestFile"
 
