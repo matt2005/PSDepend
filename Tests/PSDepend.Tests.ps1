@@ -1,13 +1,11 @@
+if(-not $ENV:BHProjectPath)
+{
+    Set-BuildEnvironment -Path $PSScriptRoot\..
+}
+Remove-Module $ENV:BHProjectName -ErrorAction SilentlyContinue
+Import-Module (Join-Path $ENV:BHProjectPath $ENV:BHProjectName) -Force
 
 BeforeAll {
-
-    if(-not $ENV:BHProjectPath)
-    {
-        Set-BuildEnvironment -Path $PSScriptRoot\..
-    }
-    Remove-Module $ENV:BHProjectName -ErrorAction SilentlyContinue
-    Import-Module (Join-Path $ENV:BHProjectPath $ENV:BHProjectName) -Force
-
     $PSVersion = $PSVersionTable.PSVersion.Major
 
     # Verbose output for non-master builds on appveyor
