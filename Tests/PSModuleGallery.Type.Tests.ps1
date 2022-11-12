@@ -504,7 +504,7 @@ InModuleScope ('{0}' -f $ENV:BHProjectName) {
 
             It 'Invokes the Git dependency type' {
                 Invoke-PSDepend @Verbose -Path "$TestDepends\git.depend.psd1" -Force
-                Assert-MockCalled -CommandName Invoke-ExternalCommand -Times 4 -Exactly
+                Assert-MockCalled -CommandName Invoke-ExternalCommand -Times 6 -Exactly
             }
 
         }
